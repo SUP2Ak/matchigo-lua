@@ -57,9 +57,18 @@ local function writeFile(path, content)
     f:close()
 end
 
+-- Cross-platform `mkdir -p`-equivalent. Detects the host via the path
+-- separator from `package.config` : `\` on Windows, `/` on POSIX. On
+-- Windows we use `cmd.exe`'s `if not exist ... mkdir ...` ; on POSIX
+-- we use `mkdir -p`. Both are no-ops if the directory already exists.
 local function ensureDir(path)
-    local winPath = path:gsub("/", "\\")
-    os.execute(string.format([[if not exist "%s" mkdir "%s"]], winPath, winPath))
+    local sep = package.config:sub(1, 1)
+    if sep == "\\" then
+        local winPath = path:gsub("/", "\\")
+        os.execute(string.format([[if not exist "%s" mkdir "%s"]], winPath, winPath))
+    else
+        os.execute(string.format([[mkdir -p "%s"]], path))
+    end
 end
 
 -- ── Comment / whitespace stripping ────────────────────────────────────────

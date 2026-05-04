@@ -23,7 +23,10 @@ jobs:
           - "5.2"
           - "5.3"
           - "5.4"
-          - "luajit-2.1"
+          # LuaJIT 2.1 in the leafo/gh-actions-lua catalog is published as
+          # `luajit-openresty` (the LuaJIT 2.1 build maintained by OpenResty).
+          # Plain "luajit-2.1" 404s — that key doesn't exist in the action.
+          - "luajit-openresty"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -59,7 +59,9 @@ local function eval(e, env, ctx)
         if op == "*"  then return l *  r end
         if op == "/"  then return l /  r end
         if op == "%"  then return l %  r end
-        if op == "//" then return l // r end
+        -- math.floor(a/b) is the Lua 5.1/5.2 polyfill for `a // b` (5.3+).
+        -- Both round toward -inf so they're equivalent on negatives too.
+        if op == "//" then return math.floor(l / r) end
     end
     error("DSL eval : unknown expr kind '" .. tostring(k) .. "'", 0)
 end
