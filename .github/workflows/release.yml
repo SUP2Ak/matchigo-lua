@@ -1,0 +1,71 @@
+name: Release
+
+# Trigger on tag pushes that look like a version (`v1.0.0`, `v0.2.3-beta`, ...).
+# Tag the commit, push the tag, and a draft release with the zip attached
+# is created automatically. Edit the release notes in the GitHub UI before
+# publishing.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write   # needed by softprops/action-gh-release to create releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Lua 5.4
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.4"
+
+      - name: Build the bundled distribution
+        run: lua build.lua
+
+      - name: Sanity check — run tests against the bundle
+        run: lua tests/run.lua dist
+
+      - name: Stage the release tree
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          STAGE="release/matchigo-lua-${REF_NAME}"
+          mkdir -p "${STAGE}/matchigo-lua-type"
+
+          # Two dist files at the root, alongside the README + LICENSE.
+          cp dist/matchigo.lua     "${STAGE}/"
+          cp dist/matchigo.min.lua "${STAGE}/"
+
+          # Type defs go into matchigo-lua-type/.
+          cp types/*.d.lua "${STAGE}/matchigo-lua-type/"
+
+          # Short release-time README + the project license.
+          cp .github/release-readme.md "${STAGE}/README.md"
+          cp LICENSE                   "${STAGE}/"
+
+          ls -la "${STAGE}"
+          ls -la "${STAGE}/matchigo-lua-type"
+
+      - name: Create the zip archive
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd release
+          zip -r "../matchigo-lua-${REF_NAME}.zip" "matchigo-lua-${REF_NAME}"
+          cd ..
+          ls -la "matchigo-lua-${REF_NAME}.zip"
+
+      - name: Create the GitHub release (draft) and upload the zip
+        uses: softprops/action-gh-release@v2
+        with:
+          name: matchigo-lua ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: matchigo-lua-${{ github.ref_name }}.zip
