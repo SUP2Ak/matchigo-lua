@@ -36,6 +36,18 @@ jobs:
         with:
           luaVersion: ${{ matrix.lua }}
 
+      # leafo/gh-actions-lua installs LuaJIT variants under the binary name
+      # `luajit` only — no `lua` symlink. Make `lua` available so the rest of
+      # the workflow doesn't need a per-cell command split.
+      - name: Symlink luajit → lua (LuaJIT cells only)
+        if: contains(matrix.lua, 'luajit')
+        run: |
+          set -euo pipefail
+          luajit_path="$(command -v luajit)"
+          echo "Linking ${luajit_path} -> /usr/local/bin/lua"
+          sudo ln -sf "${luajit_path}" /usr/local/bin/lua
+          lua -v
+
       - name: Run tests against the source tree
         run: lua tests/run.lua
 
