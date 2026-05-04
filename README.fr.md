@@ -1,6 +1,6 @@
 # matchigo-lua
 
-[![status](https://img.shields.io/badge/status-beta-yellow)](https://img.shields.io/badge/status-beta-yellow) [![focus](https://img.shields.io/badge/focus-Pattern%20Matching-purple)](https://img.shields.io/badge/focus-Pattern%20Matching-purple) [![lang](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green)](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green) [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![CI](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml/badge.svg)](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml) [![focus](https://img.shields.io/badge/focus-Pattern%20Matching-purple)](https://img.shields.io/badge/focus-Pattern%20Matching-purple) [![lang](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green)](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green) [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
 > "Primitives composables, DSL optionnel à la Rust, dispatcher compilé — pour Lua."
 
