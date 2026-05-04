@@ -155,6 +155,57 @@ return function(env, m)
         assertTrue(isMatching(pat, { kind = "click", extra = "field" }))
     end)
 
+    -- ── strict shapes : `{| ... |}` ──────────────────────────────────────
+    test("compile : strict shape — exact match", function()
+        local pat = pp("{| kind: 'click' |}")
+        assertTrue(isMatching(pat, { kind = "click" }))
+    end)
+    test("compile : strict shape — rejects extras", function()
+        local pat = pp("{| kind: 'click' |}")
+        assertFalse(isMatching(pat, { kind = "click", extra = "no" }))
+    end)
+    test("compile : strict shape — rejects missing", function()
+        local scope = { Num = P.number }
+        local pat = pp("{| kind: 'click', x: Num |}", scope)
+        assertFalse(isMatching(pat, { kind = "click" }))
+    end)
+    test("compile : strict shape — empty matches empty table only", function()
+        local pat = pp("{||}")
+        assertTrue(isMatching(pat, {}))
+        assertFalse(isMatching(pat, { x = 1 }))
+    end)
+    test("compile : strict shape — bindings via shorthand", function()
+        local rules = {
+            { with = pp("{| kind: 'add', x, y |}"),
+              handler = function(sel) return sel.x + sel.y end },
+            { otherwise = function() return -1 end },
+        }
+        assertEq(m.match({ kind = "add", x = 3, y = 4 }, rules), 7)
+        -- extra key blocks the strict shape, falls through to otherwise
+        assertEq(m.match({ kind = "add", x = 3, y = 4, z = 0 }, rules), -1)
+    end)
+    test("compile : strict shape — typed field with optional", function()
+        local scope = { Num = P.number, Str = P.string }
+        local pat = pp("{| id: Num, name: Str? |}", scope)
+        assertTrue(isMatching(pat, { id = 1 }))
+        assertTrue(isMatching(pat, { id = 1, name = "Bob" }))
+        assertFalse(isMatching(pat, { id = 1, name = "Bob", age = 30 }))
+    end)
+    test("compile : strict shape — discriminated union", function()
+        local scope = { Num = P.number }
+        local rules = {
+            { with = pp("{| kind: 'click', x: Num, y: Num |}", scope),
+              handler = function() return "click" end },
+            { with = pp("{| kind: 'key',  code: Num |}", scope),
+              handler = function() return "key" end },
+            { otherwise = function() return "?" end },
+        }
+        assertEq(m.match({ kind = "click", x = 1, y = 2 }, rules), "click")
+        assertEq(m.match({ kind = "key", code = 27 }, rules),      "key")
+        -- Extra field blocks both strict branches, falls to otherwise
+        assertEq(m.match({ kind = "click", x = 1, y = 2, z = 3 }, rules), "?")
+    end)
+
     -- ── tuples / arrays ──────────────────────────────────────────────────
     test("compile : tuple via parens", function()
         local scope = { Str = P.string, Num = P.number }

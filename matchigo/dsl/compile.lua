@@ -232,6 +232,12 @@ local function cShape(node, scope, ctx)
         out[f.key] = compile(f.pattern, scope, ctx)
         declared[i] = f.key
     end
+    if node.strict then
+        -- `{| ... |}` : strict shape, no extras allowed. Parser already
+        -- rejects `...rest` inside a strict block, so we never combine
+        -- the strict P.shape with a captureSlice.
+        return p.P.shape(out)
+    end
     if node.rest and node.rest.name then
         return p.P.intersection(out,
             p.P.captureSlice(node.rest.name, buildShapeRestExtractor(declared)))

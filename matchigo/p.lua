@@ -141,6 +141,7 @@ P.nonNullable    = P.defined
 P.positive       = leaf("positive",       function(v) return type(v) == "number" and v > 0 end)
 P.negative       = leaf("negative",       function(v) return type(v) == "number" and v < 0 end)
 P.integer        = leaf("integer",        function(v) return mathType(v) == "integer" end)
+P.float          = leaf("float",          function(v) return mathType(v) == "float"   end)
 P.finite         = leaf("finite",         function(v)
     return type(v) == "number" and v == v and v ~= huge and v ~= -huge
 end)
@@ -403,6 +404,37 @@ function P.endsWith(...)
             end
             return true
         end })
+end
+
+-- Strict shape : like a bare-table pattern but rejects any value carrying
+-- keys not declared in `tbl`. Bindings inside (P.select, nested patterns)
+-- behave identically to the partial form. Built eagerly : sub-tests baked
+-- via buildTest, declared-key set materialised at construction.
+function P.shape(tbl)
+    if type(tbl) ~= "table" then
+        error("P.shape expects a table", 2)
+    end
+    local entries, n = {}, 0
+    local declared = {}
+    for k, sub in pairs(tbl) do
+        n = n + 1
+        entries[n] = { key = k, test = buildTest(sub) }
+        declared[k] = true
+    end
+    return tag("shape", {
+        shape = tbl, declared = declared,
+        _test = function(v)
+            if type(v) ~= "table" then return false end
+            for i = 1, n do
+                local e = entries[i]
+                if not e.test(v[e.key]) then return false end
+            end
+            for k in pairs(v) do
+                if not declared[k] then return false end
+            end
+            return true
+        end
+    })
 end
 
 -- captureSlice : structural no-op pattern (always matches) whose job is to

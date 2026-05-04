@@ -16,9 +16,10 @@ M.OPT     = "Opt"      -- { inner }            `pat?`
 M.AS      = "As"       -- { inner, name }      `pat as name`
 M.NOT     = "Not"      -- { inner }            `!pat` / `not pat`
 M.GUARD   = "Guard"    -- { inner, expr }      `pat if expr`
-M.SHAPE   = "Shape"    -- { fields, rest? }    `{ k: v, k2, ...rest }`
-                       --   field : { key, pattern, shorthand }
-                       --   rest  : { name? } or nil
+M.SHAPE   = "Shape"    -- { fields, rest?, strict }  `{ k: v, k2, ...rest }` or `{| k: v |}`
+                       --   field  : { key, pattern, shorthand }
+                       --   rest   : { name? } or nil (mutually exclusive with strict=true)
+                       --   strict : true ⇒ from `{| ... |}`, no extras allowed
 M.TUPLE   = "Tuple"    -- { items }            `(a, b)` ≥2
 M.ARRAY   = "Array"    -- { items, rest? }     `[a, b, ...r]` or `[...r, a, b]`
                        --   rest : { name?, atStart } or nil
@@ -44,7 +45,7 @@ function M.opt(inner)          return { kind = M.OPT,   inner = inner } end
 function M.asNode(inner, name) return { kind = M.AS,    inner = inner, name = name } end
 function M.notNode(inner)      return { kind = M.NOT,   inner = inner } end
 function M.guard(inner, expr)  return { kind = M.GUARD, inner = inner, expr = expr } end
-function M.shape(fields, rest) return { kind = M.SHAPE, fields = fields, rest = rest } end
+function M.shape(fields, rest, strict) return { kind = M.SHAPE, fields = fields, rest = rest, strict = strict or false } end
 function M.tuple(items)        return { kind = M.TUPLE, items = items } end
 function M.array(items, rest)  return { kind = M.ARRAY, items = items, rest = rest } end
 

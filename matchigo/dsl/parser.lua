@@ -124,7 +124,8 @@ parsePrimary = function(s)
         return ast.interp(id.value)
     end
 
-    if k == "LBRACE" then return parseShape(s) end
+    if k == "LBRACE" then return parseShape(s, false) end
+    if k == "LBRACE_PIPE" then return parseShape(s, true) end
     if k == "LBRACK" then return parseArray(s) end
     if k == "LPAREN" then
         take(s)
@@ -186,12 +187,20 @@ parseScopeRefArgs = function(s)
     return args
 end
 
-parseShape = function(s)
-    expect(s, "LBRACE", "'{'")
+parseShape = function(s, strict)
+    local openKind  = strict and "LBRACE_PIPE" or "LBRACE"
+    local openStr   = strict and "'{|'"        or "'{'"
+    local closeKind = strict and "PIPE_RBRACE" or "RBRACE"
+    local closeStr  = strict and "'|}'"        or "'}'"
+    expect(s, openKind, openStr)
     local fields, rest = {}, nil
-    if accept(s, "RBRACE") then return ast.shape(fields, rest) end
+    if accept(s, closeKind) then return ast.shape(fields, rest, strict) end
     while true do
         if accept(s, "ELLIPSIS") then
+            if strict then
+                perr(s.tokens[s.pos - 1],
+                    "...rest is not allowed in a strict shape ('{| ... |}'). Use a regular '{ ... }' shape if you want to capture extras.")
+            end
             local name = nil
             local nx = peek(s)
             if nx.kind == "IDENT_LO" then take(s); name = nx.value end
@@ -218,10 +227,10 @@ parseShape = function(s)
             fields[#fields + 1] = { key = key, pattern = ast.bind(key), shorthand = true }
         end
         if not accept(s, "COMMA") then break end
-        if check(s, "RBRACE") then break end
+        if check(s, closeKind) then break end
     end
-    expect(s, "RBRACE", "'}'")
-    return ast.shape(fields, rest)
+    expect(s, closeKind, closeStr)
+    return ast.shape(fields, rest, strict)
 end
 
 parseArray = function(s)

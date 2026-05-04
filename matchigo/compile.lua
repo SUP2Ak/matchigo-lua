@@ -70,6 +70,18 @@ local function collectSelects(pattern, path, pn)
         if tag == "not" or tag == "optional" then
             return collectSelects(pattern.inner, path, pn)
         end
+        if tag == "shape" then
+            local out, on = {}, 0
+            for k, sub in pairs(pattern.shape) do
+                local subSelects = collectSelects(sub, appendPath(path, pn, k), pn + 1)
+                local sn = #subSelects
+                for j = 1, sn do
+                    on = on + 1
+                    out[on] = subSelects[j]
+                end
+            end
+            return out
+        end
         if tag == "intersection" then
             local out, on = {}, 0
             local n = pattern.n

@@ -11,6 +11,7 @@ return {
     P = p.P,
     isP = p.isP,
     isSelect = p.isSelect,
+    buildTest = p.buildTest,
 
     match = matchMod.match,
     compile = matchMod.compile,

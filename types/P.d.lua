@@ -30,6 +30,8 @@ P.negative = nil
 ---@type matchigo.Pattern
 P.integer = nil
 ---@type matchigo.Pattern
+P.float = nil
+---@type matchigo.Pattern
 P.finite = nil
 ---@type matchigo.Pattern
 P.bigintPositive = nil
@@ -194,6 +196,14 @@ function P.map(key, value) end
 ---@param arg2? matchigo.PatternLike
 ---@return matchigo.Pattern
 function P.select(arg1, arg2) end
+
+---Strict object shape : matches a table whose declared keys all match
+---their sub-patterns AND that carries no extra keys. Bare-table patterns
+---(`{ kind = "click" }`) remain partial ; opt into strictness with
+---`P.shape({ kind = "click" })`.
+---@param tbl table<any, matchigo.PatternLike>
+---@return matchigo.Pattern
+function P.shape(tbl) end
 
 ---Always-true pattern that exposes a labelled binding whose extracted
 ---value is computed via a closure (used by the DSL for `...rest` named

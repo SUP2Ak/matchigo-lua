@@ -19,6 +19,7 @@ local TWO_CHAR = {
     ["<="] = "LTE", [">="] = "GTE",
     ["||"] = "OR",  ["&&"] = "AND",
     ["//"] = "IDIV",
+    ["{|"] = "LBRACE_PIPE", ["|}"] = "PIPE_RBRACE",
 }
 
 local ONE_CHAR = {
