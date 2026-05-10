@@ -99,7 +99,7 @@ Un moteur de patterns gagne sa place quand :
 
 Si votre dispatch est « une string parmi quatre », **restez natif**. Le `if/elseif` natif est 2-3× plus rapide que n'importe quelle lib de matching sur des littéraux simples — il n'y a aucune honte à ça.
 
-Ce README et les [exemples](./docs/fr/examples.md) incluent des comparaisons head-to-head contre `if/elseif` et des dispatchs équivalents à `switch`, pour que vous voyiez le coût réel avant d'ajouter une dépendance.
+Ce README et les [exemples](./docs/fr/examples.md) incluent des comparaisons head-to-head contre des chaînes `if/elseif` et des tables `t[key]` écrites à la main, pour que vous voyiez le coût réel avant d'ajouter une dépendance.
 
 ---
 
@@ -227,11 +227,28 @@ Une seule source de vérité par primitive : `_test` vit sur le descripteur lui-
 
 ## ⚡ Philosophie perf
 
-1. **Tests bakés à la construction.** `P.gt(5)` retourne `{ ..., _test = function(v) return type(v) == "number" and v > 5 end }`. Le compilateur lit `_test` directement. Pas de switch-on-tag au dispatch.
+1. **Tests bakés à la construction.** `P.gt(5)` retourne `{ ..., _test = function(v) return type(v) == "number" and v > 5 end }`. Le compilateur lit `_test` directement. Pas de table de tag-dispatch centrale au call-time.
 2. **Dispatch hash O(1) sur littéraux.** Quand chaque `with` est un littéral primitif sans guard / sans select, `compileRules` émet un lookup `literalMap[value] -> handler`. Pas de walk d'arbre au call-time.
 3. **Shapes plain cachés.** `buildTest` mémoïse les closures de test par shape via une table à clés faibles (`__mode = "k"`). Le même `{ kind = "click" }` réutilisé sur plusieurs rules paie le coût de construction une seule fois.
 4. **Compile lazy.** Le matcher chainé diffère `compileRules` jusqu'au premier appel. Construire un matcher de 50 rules est ~gratuit ; le coût se paie quand vous l'invoquez réellement.
 5. **Cache AST pour le DSL.** `parsePattern("'GET' | 'POST'")` parse une fois, stocke l'AST keyed sur la source string, puis re-compile par `(scope, ctx)`. Re-parser la même string est gratuit.
+
+> [!IMPORTANT]
+> **matchigo-lua v1.0 ship la version lisible, pas la version max.** Les
+> internals actuels privilégient un modèle de compile clair et une
+> maintenance simple plutôt que des ns au pic. Les chiffres dans
+> [`bench/results/matrix.md`](./bench/results/matrix.md) sont déjà
+> raisonnables pour les use cases visés — mais il reste de la marge.
+> Les leviers d'optimisation concrets (DSL inline-as-Lua-source, recyclage
+> de bindings, aplatissement des wrappers, locals avancées) et les
+> conditions pour qu'ils soient shippés sont écrits dans
+> [`bench/results/README.md`](./bench/results/README.md#performance-roadmap).
+>
+> Si vous avez une trace de profiler où l'overhead de matchigo apparaît
+> vraiment dans *votre* hot path — ouvrez une issue avec des métriques.
+> Le boulot d'optimisation est sur la table s'il y a une preuve que ça
+> aiderait quelqu'un. Les "rendez ça plus rapide" génériques recevront
+> un poli "envoyez une PR".
 
 ---
 
@@ -247,7 +264,7 @@ matchigo-lua est le **port Lua de [matchigo](https://github.com/SUP2Ak/matchigo)
 | DSL à la Rust | ❌ (object literals + types natifs) | ✅ — comble le manque syntaxique |
 | `BigInt` / `Map` / `Set` | natifs | modules embarqués (Lua n'a pas d'équivalents) |
 
-**Note sur la ligne cold-path** : les deux moitiés de ce trade-off sont spécifiques au runtime. Sur V8, un dispatcher big-switch dans `matchWalk` bat l'allocation de closures fresh sur les cold paths — ça mérite sa place. Sur le VM Lua (PUC + LuaJIT) les closures sont cheap et le dispatch par table aussi, donc toutes les variantes cold-path qu'on a benchées contre `compile` ont perdu. Symétriquement, porter le baking `_test` par nœud de Lua vers TS n'apporterait rien — les hidden classes et les inline caches de V8 gèrent le dispatch mieux qu'un closure par nœud ne le ferait. Chaque port choisit le design qui gagne sur son runtime ; aucune approche n'est universellement meilleure.
+**Note sur la ligne cold-path** : les deux moitiés de ce trade-off sont spécifiques au runtime. Sur V8, un walker centralisé à tag-dispatch (`matchWalk`) bat l'allocation de closures fresh sur les cold paths — ça mérite sa place. Sur le VM Lua (PUC + LuaJIT) les closures sont cheap et le dispatch par table aussi, donc toutes les variantes cold-path qu'on a benchées contre `compile` ont perdu. Symétriquement, porter le baking `_test` par nœud de Lua vers TS n'apporterait rien — les hidden classes et les inline caches de V8 gèrent le dispatch mieux qu'un closure par nœud ne le ferait. Chaque port choisit le design qui gagne sur son runtime ; aucune approche n'est universellement meilleure.
 
 > 🤝 **Et honnêtement — c'est au dev de réfléchir.** Aucun README (celui-ci compris), aucun tableau de bench, aucun inconnu sur internet ne choisira le bon outil pour *votre* code. Adaptez le design à votre runtime, à la bande passante mentale de votre équipe, et à la version semi-réveillée de vous qui relira ça dans six mois. matchigo-lua est une option ; le `if/elseif` natif en est une autre ; parfois la bonne réponse est aucune des deux. Pas de rancune si la lib ne vous convient pas — vraiment.
 
@@ -268,7 +285,7 @@ lua tests/run.lua dist       # même suite contre le bundle
 - Une seule source de vérité par pattern (le closure `_test` sur le descripteur lui-même).
 - Le compilateur consomme de la donnée ; il ne re-implémente jamais la sémantique.
 - Payez ce que vous utilisez : rules littérales → hash ; rules structurelles → walk ; DSL → AST caché.
-- Le `switch`/`if-elseif` natif existe pour de bonnes raisons. On prouve notre valeur, on ne la suppose pas.
+- Les chaînes `if/elseif` natives et les tables `t[key]` existent pour de bonnes raisons. On prouve notre valeur, on ne la suppose pas.
 
 ---
 

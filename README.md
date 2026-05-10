@@ -1,6 +1,6 @@
 # matchigo-lua
 
-[![CI](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml/badge.svg)](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml) [![focus](https://img.shields.io/badge/focus-Pattern%20Matching-purple)](https://img.shields.io/badge/focus-Pattern%20Matching-purple) [![lang](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green)](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green) [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![CI](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml/badge.svg)](https://github.com/SUP2Ak/matchigo-lua/actions/workflows/ci.yml) [![LuaRocks](https://img.shields.io/luarocks/v/SUP2Ak/matchigo-lua?color=blue)](https://luarocks.org/modules/SUP2Ak/matchigo-lua) [![focus](https://img.shields.io/badge/focus-Pattern%20Matching-purple)](https://img.shields.io/badge/focus-Pattern%20Matching-purple) [![lang](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green)](https://img.shields.io/badge/lang-Lua%205.1%2B%20%2F%20LuaJIT-green) [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
 > "Composable pattern primitives, an optional Rust-like DSL, and a compiled dispatcher — for Lua."
 
@@ -62,17 +62,27 @@ local handle = m.matcher({ Str = P.string, Num = P.number })
 
 ## 📦 Install
 
-**Single-file drop-in** (recommended for embedding):
+**Via LuaRocks** (recommended):
+
+```sh
+luarocks install matchigo-lua
+```
 
 ```lua
--- 1. Grab dist/matchigo.lua, place it on your package.path
+local m = require("matchigo")
+```
+
+**Single-file drop-in** (no LuaRocks, recommended for embedding):
+
+```lua
+-- 1. Grab dist/matchigo.lua from the latest release, place it on your package.path
 local m = require("matchigo")
 
 -- 2. Or load it directly without touching package.path
 local m = dofile("dist/matchigo.lua")
 ```
 
-**From source** (recommended for development / contribution):
+**From source** (development / contribution):
 
 ```sh
 git clone https://github.com/SUP2Ak/matchigo-lua.git
@@ -99,7 +109,7 @@ A pattern engine earns its keep when:
 
 If your dispatch is "one of four strings", **stay native**. Native `if/elseif` is 2–3× faster than any matching library on simple literals — there's no shame in it.
 
-This README and the [examples](./docs/en/examples.md) include head-to-head comparisons against `if/elseif` and `switch`-equivalent dispatches so you can see the real cost before adding a dependency.
+This README and the [examples](./docs/en/examples.md) include head-to-head comparisons against `if/elseif` chains and hand-rolled `t[key]` lookup tables so you can see the real cost before adding a dependency.
 
 ---
 
@@ -227,11 +237,25 @@ Single source of truth per primitive: `_test` lives on the descriptor itself. `b
 
 ## ⚡ Performance philosophy
 
-1. **Tests baked at construction.** `P.gt(5)` returns `{ ..., _test = function(v) return type(v) == "number" and v > 5 end }`. The compiler reads `_test` directly. No switch-on-tag at dispatch time.
+1. **Tests baked at construction.** `P.gt(5)` returns `{ ..., _test = function(v) return type(v) == "number" and v > 5 end }`. The compiler reads `_test` directly. No central tag-dispatch table at call time.
 2. **O(1) literal Map dispatch.** When every `with` is a primitive literal with no guard / no select, `compileRules` emits a `literalMap[value] -> handler` lookup. No tree walk at call time.
 3. **Plain shapes are cached.** `buildTest` memoizes per-shape test closures via a weak-keyed table (`__mode = "k"`). The same `{ kind = "click" }` reused across rules pays the construction cost once.
 4. **Lazy compile.** The chained matcher defers `compileRules` until the first dispatch call. Building a 50-rule matcher is ~free; the cost is paid only when you actually invoke it.
 5. **AST cache for the DSL.** `parsePattern("'GET' | 'POST'")` parses once, stores the AST keyed on the source string, then re-compiles per `(scope, ctx)`. Re-parsing the same string is free.
+
+> [!IMPORTANT]
+> **matchigo-lua v1.0 ships readable, not maxed out.** The current internals
+> prioritize a clean compile model and easy maintenance over peak ns counts.
+> The numbers in [`bench/results/matrix.md`](./bench/results/matrix.md) are
+> already reasonable for the use cases this lib targets — but real headroom
+> remains. Concrete optimization avenues (DSL inline-as-Lua-source, binding
+> recycling, wrapper flattening, forward locals) and the conditions under
+> which they'd ship are written up in [`bench/results/README.md`](./bench/results/README.md#performance-roadmap).
+>
+> If you have a profiler trace where matchigo's overhead actually shows up
+> in *your* hot path — open an issue with metrics. The optimization work is
+> on the table if there's evidence it would help someone. Generic "make it
+> faster" requests will get a polite "send a PR".
 
 ---
 
@@ -247,7 +271,7 @@ matchigo-lua is the **Lua port of [matchigo](https://github.com/SUP2Ak/matchigo)
 | Rust-like DSL | ❌ (native object literals + types) | ✅ — fills the syntactic gap |
 | `BigInt` / `Map` / `Set` | natives | shipped modules (Lua has no equivalents) |
 
-**Note on the cold-path row** : both halves of this trade-off are runtime-specific. On V8, a big-switch dispatcher in `matchWalk` beats fresh closure allocation on cold paths — it earns its place. On the Lua VM (PUC + LuaJIT) closures are cheap and table dispatch is cheap, so every cold-path variant we benched against `compile` lost. Symmetrically, porting Lua's per-node `_test` baking back into TS would gain nothing — V8's hidden classes and inline caches handle the dispatch better than a per-node closure would. Each port picks the design that wins on its runtime ; neither approach is universally better.
+**Note on the cold-path row** : both halves of this trade-off are runtime-specific. On V8, a centralised tag-dispatch walker (`matchWalk`) beats fresh closure allocation on cold paths — it earns its place. On the Lua VM (PUC + LuaJIT) closures are cheap and table dispatch is cheap, so every cold-path variant we benched against `compile` lost. Symmetrically, porting Lua's per-node `_test` baking back into TS would gain nothing — V8's hidden classes and inline caches handle the dispatch better than a per-node closure would. Each port picks the design that wins on its runtime ; neither approach is universally better.
 
 > 🤝 **And honestly — the dev still has to think.** No README (this one included), no bench table, no random internet stranger is going to pick the right tool for *your* code. Match the design to your runtime, your team's brain bandwidth, and the half-asleep version of you who'll re-read this in six months. matchigo-lua is one option ; native `if/elseif` is another ; sometimes the right answer is neither. No hard feelings if the lib isn't the fit — promise.
 
@@ -261,6 +285,59 @@ lua tests/run.lua            # run the test suite against the source tree
 lua tests/run.lua dist       # same suite against the bundle
 ```
 
+## 📊 Reproducing the benchmarks
+
+The numbers in [`bench/results/`](./bench/results/) are not generated in CI — shared GitHub runners are too noisy for ns-scale microbenches to be meaningful. They come from local runs on stable hardware, with allocation tracking, GC-pause detection, and **input cycling to defeat JIT constant-folding** baked in.
+
+### One-shot : a single Lua interpreter
+
+```sh
+lua bench/run.lua             # full run, ~3 min — authoritative numbers
+lua bench/run.lua --fast      # smoke run, ~30 sec — pipeline check only
+```
+
+Each invocation writes two files :
+
+| File | What |
+|---|---|
+| `bench/results/runtime-<label>.md` | Per-scenario tables for this runtime (mean, alloc, gc, p50/p99, ratios). |
+| `bench/results/.stats/<label>.lua` | Raw stats sidecar — consumed by the matrix aggregator. |
+
+`<label>` is automatically derived from the running interpreter (`5.4`, `luajit-2.1`, …).
+
+### Cross-runtime matrix (incremental)
+
+The matrix is **decoupled from benching**. Run `bench/run.lua` under as many interpreters as you want — each drops a `.stats/<label>.lua` sidecar — then aggregate at any time, no re-running required :
+
+```sh
+# Update one column without touching the others
+lua5.3  bench/run.lua                        # bench under Lua 5.3
+luajit  bench/run.lua                        # bench under LuaJIT
+lua bench/matrix.lua                         # render bench/results/matrix.md
+
+# Or rebench every detected runtime in one go
+lua bench/matrix.lua --all
+lua bench/matrix.lua --all --fast            # smoke
+
+# Or rebench specific runtimes only
+lua bench/matrix.lua 5.4=path/to/lua-5.4 luajit=path/to/luajit
+```
+
+The matrix detects runtimes in three layers (CLI args ▸ `./.lua/` from the install scripts ▸ `PATH` probe).
+
+### Installing the runtime matrix
+
+```sh
+.\scripts\install-lua.ps1                    # Windows: builds .lua/lua-{5.1,5.2,5.3,5.4,luajit}/
+./scripts/install-lua.sh                     # Linux / macOS
+```
+
+Both use [`hererocks`](https://github.com/luarocks/hererocks) to build self-contained Lua/LuaJIT installs under `./.lua/`. No system pollution.
+
+### CI smoke test
+
+The `bench-smoke` job in CI runs `bench/run.lua --fast` on Lua 5.1 / 5.4 / LuaJIT — purely to verify the bench script doesn't break across runtimes. **The numbers it produces are not authoritative.** Artifacts are uploaded for inspection only.
+
 ---
 
 ## 💡 Philosophy
@@ -268,7 +345,7 @@ lua tests/run.lua dist       # same suite against the bundle
 - One source of truth per pattern (the `_test` closure on the descriptor itself).
 - The compiler consumes data; it never re-implements semantics.
 - Pay for what you use: literal-only rules → hash; structural rules → walk; DSL → AST cached.
-- Native `switch`/`if-elseif` exists for a reason. We prove our value, we don't assume it.
+- Native `if/elseif` chains and `t[key]` lookup tables exist for a reason. We prove our value, we don't assume it.
 
 ---
 
