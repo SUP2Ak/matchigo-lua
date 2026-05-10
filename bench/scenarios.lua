@@ -250,7 +250,10 @@ return function(m, b)
             src[#src + 1] = ("k == %q then return %d\n"):format(k, i)
         end
         src[#src + 1] = "  else return -1 end\nend\n"
-        local nativeBig = assert(load(table.concat(src)))()
+        -- Lua 5.1 has loadstring() ; 5.2+ overloads load() to accept strings.
+        ---@diagnostic disable-next-line: deprecated
+        local loadstr = loadstring or load
+        local nativeBig = assert(loadstr(table.concat(src)))()
 
         local rules = {}
         for i, k in ipairs(KEYS) do
