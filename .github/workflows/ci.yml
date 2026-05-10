@@ -56,3 +56,52 @@ jobs:
 
       - name: Run tests against the bundle
         run: lua tests/run.lua dist
+
+  bench-smoke:
+    name: Bench smoke (${{ matrix.lua }})
+    needs: test
+    runs-on: ubuntu-latest
+    # CI runners are noisy ; absolute ns numbers from this job are NOT
+    # authoritative. The job only verifies that the bench script runs
+    # cleanly on every runtime. Authoritative numbers come from local
+    # `bench/run.lua` + `bench/matrix.lua` runs on the maintainer's hardware.
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        lua:
+          - "5.1"
+          - "5.4"
+          - "luajit-openresty"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Lua ${{ matrix.lua }}
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: ${{ matrix.lua }}
+
+      - name: Symlink luajit → lua (LuaJIT cells only)
+        if: contains(matrix.lua, 'luajit')
+        run: |
+          set -euo pipefail
+          luajit_path="$(command -v luajit)"
+          sudo ln -sf "${luajit_path}" /usr/local/bin/lua
+          lua -v
+
+      - name: Build the bundled distribution
+        run: lua build.lua
+
+      - name: Run the bench (smoke configuration)
+        run: lua bench/run.lua --fast
+
+      - name: Upload bench artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-${{ matrix.lua }}
+          path: |
+            bench/results/runtime-*.md
+            bench/results/.stats/*.lua
+          if-no-files-found: warn
