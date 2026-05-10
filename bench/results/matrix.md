@@ -41,9 +41,9 @@ and re-run `lua bench/matrix.lua`.
 
 | label | description | generated |
 |---|---|---|
-| `5.3` | Lua 5.3 (no JIT) | 2026-05-10 16:33 |
-| `5.4` | Lua 5.4 (no JIT) | 2026-05-10 16:28 |
-| `luajit-2.1` | Lua 5.1 / LuaJIT 2.1.1727870382 | 2026-05-10 16:31 |
+| `5.3` | Lua 5.3 (no JIT) | 2026-05-10 21:37 |
+| `5.4` | Lua 5.4 (no JIT) | 2026-05-10 21:32 |
+| `luajit-2.1` | Lua 5.1 / LuaJIT 2.1.1727870382 | 2026-05-10 21:35 |
 
 ## Summary
 
@@ -59,9 +59,9 @@ code.
 
 | runtime | scenarios | `compile()` median | `compile()` alloc-neutral | `matcher+DSL` median | `matcher+DSL` alloc-neutral |
 |---|---:|---:|---:|---:|---:|
-| `5.3` | 8 | 1.20× slower | 8/8 | 3.75× slower | 1/3 |
-| `5.4` | 8 | 1.30× slower | 8/8 | 3.89× slower | 1/3 |
-| `luajit-2.1` | 8 | 1.52× slower | 8/8 | 4.36× slower | 1/3 |
+| `5.3` | 8 | 1.24× slower | 8/8 | 4.11× slower | 1/3 |
+| `5.4` | 8 | 1.35× slower | 8/8 | 3.82× slower | 1/3 |
+| `luajit-2.1` | 8 | 1.62× slower | 8/8 | 4.69× slower | 1/3 |
 
 ## Per-scenario matrix
 
@@ -74,60 +74,60 @@ how matchigo's overhead changes per VM.
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif` | 47 ns · 0 B · _(base)_ | 42 ns · 0 B · _(base)_ | 3 ns · 0 B · _(base)_ |
-| `matchigo     compile() — literal hash` | 51 ns · 0 B · 1.07× slower | 52 ns · 0 B · 1.26× slower | 6 ns · 0 B · 1.91× slower |
-| `matchigo     matcher + DSL` | 51 ns · 0 B · 1.07× slower | 52 ns · 0 B · 1.25× slower | 10 ns · 0 B · 2.96× slower |
+| `native       if/elseif` | 52 ns · 0 B · _(base)_ | 42 ns · 0 B · _(base)_ | 3 ns · 0 B · _(base)_ |
+| `matchigo     compile() — literal hash` | 61 ns · 0 B · 1.18× slower | 52 ns · 0 B · 1.25× slower | 7 ns · 0 B · 2.19× slower |
+| `matchigo     matcher + DSL` | 64 ns · 0 B · 1.23× slower | 51 ns · 0 B · 1.23× slower | 10 ns · 0 B · 3.14× slower |
 
 ### event handler — shape + guard
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif + field reads` | 89 ns · 0 B · _(base)_ | 91 ns · 0 B · _(base)_ | 19 ns · 0 B · _(base)_ |
-| `matchigo     compile() shape + when` | 283 ns · 0 B · 3.17× slower | 286 ns · 0 B · 3.13× slower | 42 ns · 0 B · 2.16× slower |
-| `matchigo     matcher + DSL guard` | 600 ns · 61 B · 6.72× slower | 583 ns · 53 B · 6.38× slower | 95 ns · 69 B · 4.92× slower |
+| `native       if/elseif + field reads` | 101 ns · 0 B · _(base)_ | 91 ns · 0 B · _(base)_ | 21 ns · 0 B · _(base)_ |
+| `matchigo     compile() shape + when` | 325 ns · 0 B · 3.21× slower | 287 ns · 0 B · 3.17× slower | 44 ns · 0 B · 2.10× slower |
+| `matchigo     matcher + DSL guard` | 745 ns · 61 B · 7.36× slower | 612 ns · 53 B · 6.75× slower | 98 ns · 69 B · 4.69× slower |
 
 ### validation cascade — guarded predicates
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif` | 257 ns · 114 B · _(base)_ | 234 ns · 99 B · _(base)_ | 68 ns · 113 B · _(base)_ |
-| `matchigo     compile() with when=` | 339 ns · 114 B · 1.32× slower | 315 ns · 99 B · 1.34× slower | 77 ns · 113 B · 1.14× slower |
-| `matchigo     matcher + DSL guards` | 965 ns · 283 B · 3.75× slower | 911 ns · 262 B · 3.89× slower | 296 ns · 320 B · 4.36× slower |
+| `native       if/elseif` | 283 ns · 114 B · _(base)_ | 238 ns · 99 B · _(base)_ | 74 ns · 113 B · _(base)_ |
+| `matchigo     compile() with when=` | 370 ns · 114 B · 1.31× slower | 347 ns · 99 B · 1.46× slower | 84 ns · 113 B · 1.14× slower |
+| `matchigo     matcher + DSL guards` | 1.16 µs · 283 B · 4.11× slower | 909 ns · 262 B · 3.82× slower | 348 ns · 320 B · 4.70× slower |
 
 ### state machine — (state, event) tuple dispatch
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       nested string compares` | 58 ns · 0 B · _(base)_ | 51 ns · 0 B · _(base)_ | 26 ns · 0 B · _(base)_ |
-| `matchigo     compile() + tuple DSL` | 322 ns · 0 B · 5.53× slower | 299 ns · 0 B · 5.86× slower | 67 ns · 0 B · 2.61× slower |
+| `native       nested string compares` | 66 ns · 0 B · _(base)_ | 59 ns · 0 B · _(base)_ | 28 ns · 0 B · _(base)_ |
+| `matchigo     compile() + tuple DSL` | 373 ns · 0 B · 5.68× slower | 344 ns · 0 B · 5.86× slower | 81 ns · 0 B · 2.87× slower |
 
 ### numeric range bucketing
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif on bounds` | 45 ns · 0 B · _(base)_ | 40 ns · 0 B · _(base)_ | 27 ns · 0 B · _(base)_ |
-| `matchigo     compile() + range P` | 143 ns · 0 B · 3.20× slower | 135 ns · 0 B · 3.42× slower | 62 ns · 0 B · 2.26× slower |
+| `native       if/elseif on bounds` | 53 ns · 0 B · _(base)_ | 50 ns · 0 B · _(base)_ | 30 ns · 0 B · _(base)_ |
+| `matchigo     compile() + range P` | 160 ns · 0 B · 3.01× slower | 156 ns · 0 B · 3.10× slower | 67 ns · 0 B · 2.25× slower |
 
 ### 50-branch literal dispatch — uniform mix
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif chain (50)` | 129 ns · 0 B · _(base)_ | 113 ns · 0 B · _(base)_ | 43 ns · 0 B · _(base)_ |
-| `matchigo     compile() — hash O(1)` | 56 ns · 0 B · 2.30× faster | 56 ns · 0 B · 2.01× faster | 11 ns · 0 B · 3.86× faster |
+| `native       if/elseif chain (50)` | 147 ns · 0 B · _(base)_ | 138 ns · 0 B · _(base)_ | 49 ns · 0 B · _(base)_ |
+| `matchigo     compile() — hash O(1)` | 61 ns · 0 B · 2.43× faster | 64 ns · 0 B · 2.15× faster | 12 ns · 0 B · 4.21× faster |
 
 ### 50-branch literal dispatch — tail hits + fallback
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif chain (50)` | 181 ns · 0 B · _(base)_ | 159 ns · 0 B · _(base)_ | 47 ns · 0 B · _(base)_ |
-| `matchigo     compile() — hash O(1)` | 53 ns · 0 B · 3.43× faster | 54 ns · 0 B · 2.92× faster | 12 ns · 0 B · 4.08× faster |
+| `native       if/elseif chain (50)` | 208 ns · 0 B · _(base)_ | 170 ns · 0 B · _(base)_ | 50 ns · 0 B · _(base)_ |
+| `matchigo     compile() — hash O(1)` | 61 ns · 0 B · 3.41× faster | 56 ns · 0 B · 3.05× faster | 13 ns · 0 B · 3.92× faster |
 
 ### data-driven rules — config map
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       hand-rolled hash table` | 48 ns · 0 B · _(base)_ | 52 ns · 0 B · _(base)_ | 47 ns · 0 B · _(base)_ |
-| `matchigo     compile(rules-from-data)` | 51 ns · 0 B · 1.05× slower | 52 ns · 0 B · tie | 11 ns · 0 B · 4.24× faster |
+| `native       hand-rolled hash table` | 54 ns · 0 B · _(base)_ | 55 ns · 0 B · _(base)_ | 53 ns · 0 B · _(base)_ |
+| `matchigo     compile(rules-from-data)` | 62 ns · 0 B · 1.15× slower | 58 ns · 0 B · 1.06× slower | 12 ns · 0 B · 4.29× faster |
 
 ### JIT folding showcase — constant input (educational)
 
@@ -144,8 +144,8 @@ how matchigo's overhead changes per VM.
 
 | benchmark | `5.3` | `5.4` | `luajit-2.1` |
 | --- | ---: | ---: | ---: |
-| `native       if/elseif (constant 'POST')` | 35 ns · 0 B · _(base)_ | 37 ns · 0 B · _(base)_ | 0 ns · 0 B · _(base)_ |
-| `matchigo     compile() (constant 'POST')` | 43 ns · 0 B · 1.24× slower | 50 ns · 0 B · 1.36× slower | 0 ns · 0 B · tie |
+| `native       if/elseif (constant 'POST')` | 37 ns · 0 B · _(base)_ | 40 ns · 0 B · _(base)_ | 0 ns · 0 B · _(base)_ |
+| `matchigo     compile() (constant 'POST')` | 49 ns · 0 B · 1.30× slower | 53 ns · 0 B · 1.30× slower | 0 ns · 0 B · tie |
 
 ---
 

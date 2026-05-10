@@ -340,12 +340,13 @@ function M.renderRuntime(stats)
 
     for _, g in ipairs(stats.groups) do
         local isEducational = g.name:lower():find("educational", 1, true) ~= nil
+        local skip = isEducational and not isJit
 
-        emit("## " .. g.name)
-        emit()
+        if not skip then
+            emit("## " .. g.name)
+            emit()
 
-        if isEducational then
-            if isJit then
+            if isEducational then
                 emit("> [!TIP]")
                 emit("> **Educational scenario — this is where LuaJIT shines.**")
                 emit("> The dispatcher is called with a **constant** input every")
@@ -357,39 +358,28 @@ function M.renderRuntime(stats)
                 emit("> against the cycled scenarios above to see the real cost")
                 emit("> when the JIT cannot fold the input away.")
                 emit()
-            else
-                emit("> [!NOTE]")
-                emit("> **Educational scenario — the lesson lives on LuaJIT.**")
-                emit("> This bench uses a **constant** input every iteration (no")
-                emit("> cycling). On this non-JIT runtime, the row reads like any")
-                emit("> other dispatch — the per-call cost. The interesting")
-                emit("> contrast (LuaJIT folding both contestants to ~0 ns) lives")
-                emit("> in [`runtime-luajit-2.1.md`](./runtime-luajit-2.1.md) and")
-                emit("> the [matrix](./matrix.md). On Lua 5.x, this scenario is")
-                emit("> just included for parity.")
-                emit()
             end
-        end
 
-        emit("| benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |")
-        emit("|---|---:|---:|---:|---:|---:|---:|---:|")
-        local baseline = g.benches[1].avg
-        for i, r in ipairs(g.benches) do
-            local relStr
-            if i == 1 then
-                relStr = "_(base)_"
-            else
-                relStr = fmtRel(r.avg / baseline)
+            emit("| benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |")
+            emit("|---|---:|---:|---:|---:|---:|---:|---:|")
+            local baseline = g.benches[1].avg
+            for i, r in ipairs(g.benches) do
+                local relStr
+                if i == 1 then
+                    relStr = "_(base)_"
+                else
+                    relStr = fmtRel(r.avg / baseline)
+                end
+                local safeName = r.name:gsub("|", "\\|")
+                local gcStr    = string.format("%d/%d", r.gcOutliers or 0, r.samples or 0)
+                emit(string.format("| `%s` | %s | %s | %s | %s | %s..%s | %s/%s | %s |",
+                    safeName, fmtTime(r.avg), fmtBytes(r.alloc), gcStr,
+                    fmtRate(1 / r.avg),
+                    fmtTime(r.min), fmtTime(r.max),
+                    fmtTime(r.p50), fmtTime(r.p99), relStr))
             end
-            local safeName = r.name:gsub("|", "\\|")
-            local gcStr    = string.format("%d/%d", r.gcOutliers or 0, r.samples or 0)
-            emit(string.format("| `%s` | %s | %s | %s | %s | %s..%s | %s/%s | %s |",
-                safeName, fmtTime(r.avg), fmtBytes(r.alloc), gcStr,
-                fmtRate(1 / r.avg),
-                fmtTime(r.min), fmtTime(r.max),
-                fmtTime(r.p50), fmtTime(r.p99), relStr))
+            emit()
         end
-        emit()
     end
 
     return table.concat(lines, "\n") .. "\n"

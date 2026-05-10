@@ -1,7 +1,7 @@
 # matchigo-lua bench — `5.3`
 
 **Runtime** : Lua 5.3 (no JIT)
-**Generated** : 2026-05-10 16:33
+**Generated** : 2026-05-10 21:37
 **Config** : 30 samples, 200 warmup, 50ms calibration target
 
 > [!IMPORTANT]
@@ -36,75 +36,58 @@ scenario, so ratios stay accurate even on LuaJIT.
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif` | 47 ns | 0 B | 0/30 | 21.21 M/s | 46 ns..49 ns | 47 ns/48 ns | _(base)_ |
-| `matchigo     compile() — literal hash` | 51 ns | 0 B | 0/30 | 19.77 M/s | 50 ns..51 ns | 51 ns/51 ns | 1.07× slower |
-| `matchigo     matcher + DSL` | 51 ns | 0 B | 0/30 | 19.78 M/s | 50 ns..52 ns | 51 ns/51 ns | 1.07× slower |
+| `native       if/elseif` | 52 ns | 0 B | 0/30 | 19.40 M/s | 47 ns..59 ns | 51 ns/58 ns | _(base)_ |
+| `matchigo     compile() — literal hash` | 61 ns | 0 B | 0/30 | 16.50 M/s | 54 ns..80 ns | 60 ns/70 ns | 1.18× slower |
+| `matchigo     matcher + DSL` | 64 ns | 0 B | 0/30 | 15.72 M/s | 54 ns..85 ns | 59 ns/78 ns | 1.23× slower |
 
 ## event handler — shape + guard
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif + field reads` | 89 ns | 0 B | 0/30 | 11.21 M/s | 87 ns..91 ns | 89 ns/90 ns | _(base)_ |
-| `matchigo     compile() shape + when` | 283 ns | 0 B | 0/30 | 3.53 M/s | 278 ns..293 ns | 283 ns/286 ns | 3.17× slower |
-| `matchigo     matcher + DSL guard` | 600 ns | 61 B | 0/30 | 1.67 M/s | 580 ns..620 ns | 600 ns/610 ns | 6.72× slower |
+| `native       if/elseif + field reads` | 101 ns | 0 B | 0/30 | 9.88 M/s | 88 ns..134 ns | 97 ns/132 ns | _(base)_ |
+| `matchigo     compile() shape + when` | 325 ns | 0 B | 0/30 | 3.08 M/s | 292 ns..413 ns | 316 ns/387 ns | 3.21× slower |
+| `matchigo     matcher + DSL guard` | 745 ns | 61 B | 0/30 | 1.34 M/s | 580 ns..1000 ns | 735 ns/960 ns | 7.36× slower |
 
 ## validation cascade — guarded predicates
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif` | 257 ns | 114 B | 0/30 | 3.89 M/s | 251 ns..274 ns | 257 ns/262 ns | _(base)_ |
-| `matchigo     compile() with when=` | 339 ns | 114 B | 0/30 | 2.95 M/s | 332 ns..357 ns | 339 ns/345 ns | 1.32× slower |
-| `matchigo     matcher + DSL guards` | 965 ns | 283 B | 0/30 | 1.04 M/s | 940 ns..990 ns | 965 ns/990 ns | 3.75× slower |
+| `native       if/elseif` | 283 ns | 114 B | 0/30 | 3.53 M/s | 249 ns..345 ns | 278 ns/342 ns | _(base)_ |
+| `matchigo     compile() with when=` | 370 ns | 114 B | 0/30 | 2.70 M/s | 326 ns..455 ns | 362 ns/431 ns | 1.31× slower |
+| `matchigo     matcher + DSL guards` | 1.16 µs | 283 B | 0/30 | 860.34 K/s | 920 ns..1.66 µs | 1.08 µs/1.66 µs | 4.11× slower |
 
 ## state machine — (state, event) tuple dispatch
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       nested string compares` | 58 ns | 0 B | 0/30 | 17.17 M/s | 56 ns..63 ns | 58 ns/60 ns | _(base)_ |
-| `matchigo     compile() + tuple DSL` | 322 ns | 0 B | 0/30 | 3.10 M/s | 320 ns..326 ns | 322 ns/325 ns | 5.53× slower |
+| `native       nested string compares` | 66 ns | 0 B | 0/30 | 15.23 M/s | 55 ns..93 ns | 63 ns/88 ns | _(base)_ |
+| `matchigo     compile() + tuple DSL` | 373 ns | 0 B | 0/30 | 2.68 M/s | 337 ns..451 ns | 371 ns/420 ns | 5.68× slower |
 
 ## numeric range bucketing
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif on bounds` | 45 ns | 0 B | 0/30 | 22.30 M/s | 44 ns..45 ns | 45 ns/45 ns | _(base)_ |
-| `matchigo     compile() + range P` | 143 ns | 0 B | 0/30 | 6.98 M/s | 142 ns..145 ns | 143 ns/145 ns | 3.20× slower |
+| `native       if/elseif on bounds` | 53 ns | 0 B | 0/30 | 18.85 M/s | 45 ns..71 ns | 52 ns/71 ns | _(base)_ |
+| `matchigo     compile() + range P` | 160 ns | 0 B | 0/30 | 6.26 M/s | 140 ns..199 ns | 156 ns/191 ns | 3.01× slower |
 
 ## 50-branch literal dispatch — uniform mix
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif chain (50)` | 129 ns | 0 B | 0/30 | 7.75 M/s | 127 ns..131 ns | 129 ns/131 ns | _(base)_ |
-| `matchigo     compile() — hash O(1)` | 56 ns | 0 B | 0/30 | 17.78 M/s | 55 ns..59 ns | 56 ns/59 ns | 2.30× faster |
+| `native       if/elseif chain (50)` | 147 ns | 0 B | 0/30 | 6.80 M/s | 127 ns..212 ns | 140 ns/184 ns | _(base)_ |
+| `matchigo     compile() — hash O(1)` | 61 ns | 0 B | 0/30 | 16.48 M/s | 55 ns..78 ns | 59 ns/73 ns | 2.43× faster |
 
 ## 50-branch literal dispatch — tail hits + fallback
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif chain (50)` | 181 ns | 0 B | 0/30 | 5.51 M/s | 180 ns..185 ns | 181 ns/184 ns | _(base)_ |
-| `matchigo     compile() — hash O(1)` | 53 ns | 0 B | 0/30 | 18.92 M/s | 51 ns..56 ns | 53 ns/54 ns | 3.43× faster |
+| `native       if/elseif chain (50)` | 208 ns | 0 B | 0/30 | 4.81 M/s | 181 ns..288 ns | 200 ns/266 ns | _(base)_ |
+| `matchigo     compile() — hash O(1)` | 61 ns | 0 B | 0/30 | 16.40 M/s | 54 ns..80 ns | 58 ns/73 ns | 3.41× faster |
 
 ## data-driven rules — config map
 
 | benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `native       hand-rolled hash table` | 48 ns | 0 B | 0/30 | 20.73 M/s | 48 ns..53 ns | 48 ns/50 ns | _(base)_ |
-| `matchigo     compile(rules-from-data)` | 51 ns | 0 B | 0/30 | 19.69 M/s | 50 ns..52 ns | 51 ns/52 ns | 1.05× slower |
-
-## JIT folding showcase — constant input (educational)
-
-> [!NOTE]
-> **Educational scenario — the lesson lives on LuaJIT.**
-> This bench uses a **constant** input every iteration (no
-> cycling). On this non-JIT runtime, the row reads like any
-> other dispatch — the per-call cost. The interesting
-> contrast (LuaJIT folding both contestants to ~0 ns) lives
-> in [`runtime-luajit-2.1.md`](./runtime-luajit-2.1.md) and
-> the [matrix](./matrix.md). On Lua 5.x, this scenario is
-> just included for parity.
-
-| benchmark | mean | alloc | gc | rate | min..max | p50/p99 | vs base |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| `native       if/elseif (constant 'POST')` | 35 ns | 0 B | 0/30 | 28.66 M/s | 35 ns..35 ns | 35 ns/35 ns | _(base)_ |
-| `matchigo     compile() (constant 'POST')` | 43 ns | 0 B | 0/30 | 23.07 M/s | 43 ns..52 ns | 43 ns/44 ns | 1.24× slower |
+| `native       hand-rolled hash table` | 54 ns | 0 B | 0/30 | 18.47 M/s | 50 ns..69 ns | 52 ns/61 ns | _(base)_ |
+| `matchigo     compile(rules-from-data)` | 62 ns | 0 B | 0/30 | 16.03 M/s | 54 ns..82 ns | 59 ns/80 ns | 1.15× slower |
 
