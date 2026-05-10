@@ -1,3 +1,4 @@
 .lua
 bench/results/.stats
 dist
+*.rock
